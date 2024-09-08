@@ -41,7 +41,7 @@ class Context {
 private:
 
     State* state_;
-    serial::Serial m_serial{ "COM4", 19200, serial::Timeout::simpleTimeout(1000) };
+    serial::Serial m_serial{ "COM6", 19200, serial::Timeout::simpleTimeout(1000) };
 
 public:
     Context(State* state) : state_(nullptr) {
@@ -104,25 +104,63 @@ public:
 
 
 // Transmit Device Component Information
-// VendorCode
+// Vendor Code
 class TransmitDeviceComponentInformation_VendorCode_State : public State {
 public:
 
-    void HandleData() override {
-        std::cout << "ConcreteStateB handles request2.\n";
-        std::cout << "ConcreteStateB wants to change the state of the context.\n";
-        this->context_->TransitionTo(new StopContinuousDataState);
-    }
-    std::vector<uint8_t> GetCommand() override {
+    void HandleData() override;
+    std::vector<uint8_t> GetCommand() override;
+    size_t GetRespondBytes();
+};
 
-        std::vector<uint8_t> data{ 0x10, 0x0a, 0x0a, 0x00, 0x0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x25 };
-        return data;
+// Transmit Device Component Information
+// Serial Number
+class TransmitDeviceComponentInformation_SerialNumber_State : public State {
+public:
 
-    }
-    size_t GetRespondBytes() {
-        return 23;
-    }
+    void HandleData() override;
+    std::vector<uint8_t> GetCommand() override;
+    size_t GetRespondBytes();
+};
 
+// Transmit Device Component Information
+// Hardware Revision
+class TransmitDeviceComponentInformation_HardwareRevision_State : public State {
+public:
+
+    void HandleData() override;
+    std::vector<uint8_t> GetCommand() override;
+    size_t GetRespondBytes();
+};
+
+// Transmit Device Component Information
+// Software Revision
+class TransmitDeviceComponentInformation_SoftwareRevision_State : public State {
+public:
+
+    void HandleData() override;
+    std::vector<uint8_t> GetCommand() override;
+    size_t GetRespondBytes();
+};
+
+// Transmit Device Component Information
+// Product Name
+class TransmitDeviceComponentInformation_ProductName_State : public State {
+public:
+
+    void HandleData() override;
+    std::vector<uint8_t> GetCommand() override;
+    size_t GetRespondBytes();
+};
+
+// Transmit Device Component Information
+// Part Number
+class TransmitDeviceComponentInformation_PartNumber_State : public State {
+public:
+
+    void HandleData() override;
+    std::vector<uint8_t> GetCommand() override;
+    size_t GetRespondBytes();
 };
 
 void StopContinuousDataState::HandleData() {
@@ -169,7 +207,7 @@ void GetIntervalBaseTimeState::HandleData() {
 
 std::vector<uint8_t> GetIntervalBaseTimeState::GetCommand() {
 
-    std::vector<uint8_t> data{ 0x10, 0x02, 0x02, 0xff, 0x14 };
+    std::vector<uint8_t> data{ 0x10, 0x02, 0x02, 0xff, 0xed };
     return data;
 }
 
@@ -177,12 +215,203 @@ size_t GetIntervalBaseTimeState::GetRespondBytes() {
     return GetCommand().size();
 }
 
+
+void TransmitDeviceComponentInformation_VendorCode_State::HandleData() {
+    {
+        std::vector<uint8_t> rddata;
+        std::cout << "ConcreteStateB handles request2.\n";
+        std::cout << "ConcreteStateB wants to change the state of the context.\n";
+        size_t bytes_wrote = this->context_->SendCmd(this);
+        size_t bytes_read = this->context_->ReadRespond(this, rddata);
+        if (bytes_read == 23 && rddata[0]== 0x5b && rddata[1] == 0x06 && rddata[2] == 0x0a && rddata[3] == 0x14)
+        {
+            // sucess
+            this->context_->TransitionTo(new TransmitDeviceComponentInformation_SerialNumber_State);
+        }
+        else 
+        {
+            // fail
+            this->context_->TransitionTo(new TransmitDeviceComponentInformation_VendorCode_State);
+        }
+    }
+}
+
+
+std::vector<uint8_t> TransmitDeviceComponentInformation_VendorCode_State::GetCommand() {
+
+    std::vector<uint8_t> data{ 0x10, 0x0a, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xdc };
+    return data;
+}
+
+size_t TransmitDeviceComponentInformation_VendorCode_State::GetRespondBytes() {
+    return 12;
+}
+
+void TransmitDeviceComponentInformation_SerialNumber_State::HandleData() {
+    {
+        std::vector<uint8_t> rddata;
+        std::cout << "ConcreteStateB handles request2.\n";
+        std::cout << "ConcreteStateB wants to change the state of the context.\n";
+        size_t bytes_wrote = this->context_->SendCmd(this);
+        size_t bytes_read = this->context_->ReadRespond(this, rddata);
+        if (bytes_read != 0 && rddata[0] == 0x06 && rddata[1] == 0x0a && rddata[2] == 0x14)
+        {
+            // sucess
+            this->context_->TransitionTo(new TransmitDeviceComponentInformation_HardwareRevision_State);
+        }
+        else if (bytes_read != 0 && rddata[0] == 0x15 && rddata[1] == 0x0a && rddata[2] == 0x01)
+        {
+            // fail
+            this->context_->TransitionTo(new StopContinuousDataState);
+        }
+    }
+}
+
+
+std::vector<uint8_t> TransmitDeviceComponentInformation_SerialNumber_State::GetCommand() {
+
+    std::vector<uint8_t> data{ 0x10, 0x0a, 0x0a, 0x00, 0x0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x26 };
+    return data;
+}
+
+size_t TransmitDeviceComponentInformation_SerialNumber_State::GetRespondBytes() {
+    return 12;
+}
+
+void TransmitDeviceComponentInformation_HardwareRevision_State::HandleData() {
+    {
+        std::vector<uint8_t> rddata;
+        std::cout << "ConcreteStateB handles request2.\n";
+        std::cout << "ConcreteStateB wants to change the state of the context.\n";
+        size_t bytes_wrote = this->context_->SendCmd(this);
+        size_t bytes_read = this->context_->ReadRespond(this, rddata);
+        if (bytes_read != 0 && rddata[0] == 0x06 && rddata[1] == 0x0a && rddata[2] == 0x14)
+        {
+            // sucess
+            this->context_->TransitionTo(new TransmitDeviceComponentInformation_SoftwareRevision_State);
+        }
+        else if (bytes_read != 0 && rddata[0] == 0x15 && rddata[1] == 0x0a && rddata[2] == 0x01)
+        {
+            // fail
+            this->context_->TransitionTo(new StopContinuousDataState);
+        }
+    }
+}
+
+
+std::vector<uint8_t> TransmitDeviceComponentInformation_HardwareRevision_State::GetCommand() {
+
+    std::vector<uint8_t> data{ 0x10, 0x0a, 0x0a, 0x00, 0x0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x27 };
+    return data;
+}
+
+size_t TransmitDeviceComponentInformation_HardwareRevision_State::GetRespondBytes() {
+    return 12;
+}
+
+void TransmitDeviceComponentInformation_SoftwareRevision_State::HandleData() {
+    {
+        std::vector<uint8_t> rddata;
+        std::cout << "ConcreteStateB handles request2.\n";
+        std::cout << "ConcreteStateB wants to change the state of the context.\n";
+        size_t bytes_wrote = this->context_->SendCmd(this);
+        size_t bytes_read = this->context_->ReadRespond(this, rddata);
+        if (bytes_read != 0 && rddata[0] == 0x06 && rddata[1] == 0x0a && rddata[2] == 0x14)
+        {
+            // sucess
+            this->context_->TransitionTo(new TransmitDeviceComponentInformation_ProductName_State);
+        }
+        else if (bytes_read != 0 && rddata[0] == 0x15 && rddata[1] == 0x0a && rddata[2] == 0x01)
+        {
+            // fail
+            this->context_->TransitionTo(new StopContinuousDataState);
+        }
+    }
+}
+
+
+std::vector<uint8_t> TransmitDeviceComponentInformation_SoftwareRevision_State::GetCommand() {
+
+    std::vector<uint8_t> data{ 0x10, 0x0a, 0x0a, 0x00, 0x0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x28 };
+    return data;
+}
+
+size_t TransmitDeviceComponentInformation_SoftwareRevision_State::GetRespondBytes() {
+    return 12;
+}
+
+void TransmitDeviceComponentInformation_ProductName_State::HandleData() {
+    {
+        std::vector<uint8_t> rddata;
+        std::cout << "ConcreteStateB handles request2.\n";
+        std::cout << "ConcreteStateB wants to change the state of the context.\n";
+        size_t bytes_wrote = this->context_->SendCmd(this);
+        size_t bytes_read = this->context_->ReadRespond(this, rddata);
+        if (bytes_read != 0 && rddata[0] == 0x06 && rddata[1] == 0x0a && rddata[2] == 0x14)
+        {
+            // sucess
+            this->context_->TransitionTo(new TransmitDeviceComponentInformation_PartNumber_State);
+        }
+        else if (bytes_read != 0 && rddata[0] == 0x15 && rddata[1] == 0x0a && rddata[2] == 0x01)
+        {
+            // fail
+            this->context_->TransitionTo(new StopContinuousDataState);
+        }
+    }
+}
+
+
+std::vector<uint8_t> TransmitDeviceComponentInformation_ProductName_State::GetCommand() {
+
+    std::vector<uint8_t> data{ 0x10, 0x0a, 0x0a, 0x00, 0x0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x29 };
+    return data;
+}
+
+size_t TransmitDeviceComponentInformation_ProductName_State::GetRespondBytes() {
+    return 12;
+}
+
+
+void TransmitDeviceComponentInformation_PartNumber_State::HandleData() {
+    {
+        std::vector<uint8_t> rddata;
+        std::cout << "ConcreteStateB handles request2.\n";
+        std::cout << "ConcreteStateB wants to change the state of the context.\n";
+        size_t bytes_wrote = this->context_->SendCmd(this);
+        size_t bytes_read = this->context_->ReadRespond(this, rddata);
+        if (bytes_read != 0 && rddata[0] == 0x06 && rddata[1] == 0x0a && rddata[2] == 0x14)
+        {
+            // sucess
+            //this->context_->TransitionTo(new TransmitDeviceComponentInformation_PartNumber_State);
+        }
+        else if (bytes_read != 0 && rddata[0] == 0x15 && rddata[1] == 0x0a && rddata[2] == 0x01)
+        {
+            // fail
+            this->context_->TransitionTo(new StopContinuousDataState);
+        }
+    }
+}
+
+
+std::vector<uint8_t> TransmitDeviceComponentInformation_PartNumber_State::GetCommand() {
+
+    std::vector<uint8_t> data{ 0x10, 0x0a, 0x0a, 0x00, 0x0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x30 };
+    return data;
+}
+
+size_t TransmitDeviceComponentInformation_PartNumber_State::GetRespondBytes() {
+    return 12;
+}
 /**
  * The client code.
  */
 void ClientCode() {
     Context* context = new Context(new StopContinuousDataState);
-    context->Request1();
+    while (true)
+    {
+        context->Request1();
+    }
+    
 
     delete context;
 }
